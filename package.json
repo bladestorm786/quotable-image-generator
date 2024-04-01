@@ -2,7 +2,7 @@
   "name": "quotable-image-generator",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "public\index.ejs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
