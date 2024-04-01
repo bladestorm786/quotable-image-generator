@@ -6,14 +6,17 @@ const { loadQuotes, saveQuotes } = require('./datastore');
 const app = express();
 const port = process.env.PORT || 3001; // Dynamic port for Vercel
 
+// Setting the directory where the view templates are located
+app.set('views', path.join(__dirname, 'views'));
+
 // Make sure to replace with your actual Hugging Face API key and adjust the model endpoint as needed
 const HUGGING_FACE_API_KEY = "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";
 const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/your_model_here";
 
+app.use(express.static('public'));
+app.set('view engine', 'ejs');
 
-
-app.set('views', path.join(__dirname, 'views')); // Make sure the views directory is correct
-app.set('view engine', 'ejs'); // Set ejs as the view engine
+// Your existing function and route definitions remain unchanged
 
 async function fetchQuoteAndGenerateImage() {
     try {
@@ -76,5 +79,6 @@ app.get('/filter/tag/:tag', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}/`));
+
 
 
