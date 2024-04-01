@@ -13,6 +13,9 @@ const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/your_model_h
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
+app.set('views', path.join(__dirname, 'views')); // Make sure the views directory is correct
+app.set('view engine', 'ejs'); // Set ejs as the view engine
+
 async function fetchQuoteAndGenerateImage() {
     try {
         const quoteResponse = await axios.get('https://api.quotable.io/random');
