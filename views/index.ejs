@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery of Quotes</title>
+    <link rel="stylesheet" href="/style.css">
+    <!-- Including FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <h1>Gallery of Quotes</h1>
+    <p>This product includes software developed by the "goofyai/3d_render_style_xl" project. For more information, please visit <a href="https://example.com/goofyai/3d_render_style_xl" target="_blank">https://example.com/goofyai/3d_render_style_xl</a>.</p>
+
+    <div class="gallery">
+        <% images.forEach(function(image) { %>
+            <div class="card">
+                <img src="<%= image.fullUrl %>" alt="Generated Image" class="card-image">
+                <div class="card-content">
+                    <p>"<%= image.content %>" - <a href="/filter/author/<%= encodeURIComponent(image.author) %>"><%= image.author %></a></p>
+                    <% if(image.tags && image.tags.length) { %>
+                        <div class="card-tags">
+                            <i class="fas fa-tags"></i> <!-- Tag icon -->
+                            <% image.tags.forEach(function(tag) { %>
+                                <a href="/filter/tag/<%= encodeURIComponent(tag) %>"><%= tag %></a>
+                            <% }); %>
+                        </div>
+                    <% } %>
+                    <div class="social-links">
+                        <!-- Twitter -->
+                        <a href="https://twitter.com/intent/tweet?text=<%= encodeURIComponent('"' + image.content + '" - ' + image.author) %>" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter"></i></a>
+                        <!-- Facebook -->
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=<%= baseUrl %><%= encodeURIComponent(image.fullUrl) %>" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i></a>
+                        <!-- WhatsApp -->
+                        <a href="https://api.whatsapp.com/send?text=<%= encodeURIComponent('"' + image.content + '" - ' + image.author) %>" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</body>
+</html>
+
