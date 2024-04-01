@@ -1,24 +1,23 @@
 {
   "name": "quotable-image-generator",
   "version": "1.0.0",
-  "description": "A simple project to generate images with quotes using Node.js, Express, and EJS.",
+  "description": "",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Your Name <your.email@example.com>",
+  "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.8",
     "ejs": "^3.1.9",
     "express": "^4.19.2",
+    "fs": "^0.0.1-security",
     "fs-extra": "^11.2.0",
-    "node-fetch": "^3.3.2" 
-  },
-  "engines": {
-  "node": "20.x"
+    "node-fetch": "^3.3.2",
+    "path": "^0.12.7"
+  }
 }
 
-}

@@ -4,11 +4,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const { loadQuotes, saveQuotes } = require('./datastore');
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001; // Dynamic port for Vercel
 
 // Make sure to replace with your actual Hugging Face API key and adjust the model endpoint as needed
 const HUGGING_FACE_API_KEY = "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";
-const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
+const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/your_model_here";
 
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
@@ -53,7 +53,7 @@ setInterval(fetchQuoteAndGenerateImage, 10000);
 
 app.get('/', async (req, res) => {
     const quotes = await loadQuotes();
-    const baseUrl = 'http://localhost:3001/'; // Adjust this to your actual server address in production
+    const baseUrl = req.protocol + '://' + req.get('host') + '/';
     res.render('index', { images: quotes, baseUrl });
 });
 
@@ -61,15 +61,18 @@ app.get('/filter/author/:author', async (req, res) => {
     const author = req.params.author;
     const quotes = await loadQuotes();
     const filteredQuotes = quotes.filter(quote => quote.author === author);
-    res.render('index', { images: filteredQuotes, baseUrl: 'http://localhost:3001/' });
+    const baseUrl = req.protocol + '://' + req.get('host') + '/';
+    res.render('index', { images: filteredQuotes, baseUrl });
 });
 
 app.get('/filter/tag/:tag', async (req, res) => {
     const tag = req.params.tag;
     const quotes = await loadQuotes();
     const filteredQuotes = quotes.filter(quote => quote.tags && quote.tags.includes(tag));
-    res.render('index', { images: filteredQuotes, baseUrl: 'http://localhost:3001/' });
+    const baseUrl = req.protocol + '://' + req.get('host') + '/';
+    res.render('index', { images: filteredQuotes, baseUrl });
 });
 
-app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+app.listen(port, () => console.log(`Server running at http://localhost:${port}/`));
+
 

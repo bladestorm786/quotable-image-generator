@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AInspired</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Welcome to AInspired</h1>
+    <div id="gallery">
+        <!-- Images will be inserted here -->
+    </div>
+    <script>
+        // JavaScript to dynamically update the gallery with new images
+        setInterval(() => {
+            fetch('/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('gallery').innerHTML = html;
+                })
+                .catch(err => console.error('Error fetching new images:', err));
+        }, 10000); // Refresh every 10 seconds
+    </script>
+</body>
+</html>
+
