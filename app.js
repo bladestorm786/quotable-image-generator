@@ -10,8 +10,7 @@ const port = process.env.PORT || 3001; // Dynamic port for Vercel
 const HUGGING_FACE_API_KEY = "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";
 const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/your_model_here";
 
-app.use(express.static('public'));
-app.set('view engine', 'ejs');
+
 
 app.set('views', path.join(__dirname, 'views')); // Make sure the views directory is correct
 app.set('view engine', 'ejs'); // Set ejs as the view engine
