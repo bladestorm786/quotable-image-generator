@@ -11,7 +11,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Make sure to replace with your actual Hugging Face API key and adjust the model endpoint as needed
 const HUGGING_FACE_API_KEY = "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";
-const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/your_model_here";
+const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
 
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
