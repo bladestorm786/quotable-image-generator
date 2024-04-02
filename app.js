@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Replace with your actual Hugging Face API key and model endpoint
 const HUGGING_FACE_API_KEY = "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";
-const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/your_model_here";
+const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
 
 // Your existing function and route definitions remain unchanged
 
