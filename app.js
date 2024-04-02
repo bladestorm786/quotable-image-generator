@@ -2,43 +2,50 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
-const { loadQuotes, saveQuotes } = require('./datastore'); // Ensure these functions are properly implemented to load and save quotes
+const { loadQuotes, saveQuotes } = require('./datastore');
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(express.static('public')); // Serve static files from the 'public' directory
-app.set('view engine', 'ejs'); // Use EJS as the template engine
-app.set('views', path.join(__dirname, 'views')); // Define the directory for EJS templates
-
-// Replace these placeholders with your actual API key and model endpoint
+// Make sure to replace with your actual Hugging Face API key and adjust the model endpoint as needed
 const HUGGING_FACE_API_KEY = "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";
 const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
 
-// Function to fetch a quote and generate an image
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Set 'view engine' to 'ejs' for rendering
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 async function fetchQuoteAndGenerateImage() {
     try {
         // Fetching a random quote
         const quoteResponse = await axios.get('https://api.quotable.io/random');
         const quoteData = quoteResponse.data;
 
-        // Generating an image for the quote
+        console.log(`Fetched quote: ${quoteData.content} - ${quoteData.author}`);
+
+        // Generating an image with the quote
         const imageResponse = await axios.post(
             MODEL_ENDPOINT,
             { inputs: quoteData.content },
             {
                 headers: { 'Authorization': `Bearer ${HUGGING_FACE_API_KEY}` },
-                responseType: 'arraybuffer', // The image is expected to be a binary buffer
+                responseType: 'arraybuffer',
             }
         );
 
-        // Saving the generated image to the 'public/images' directory
+        // Saving the generated image
         const timestamp = Date.now();
-        const imageName = `image_${timestamp}.png`;
-        const imagePath = path.join(__dirname, 'public', 'images', imageName);
+        const imageName = `images/image_${timestamp}.png`;
+        const imagePath = path.join(__dirname, 'public', imageName);
         await fs.writeFile(imagePath, imageResponse.data);
 
-        // Loading existing quotes, adding the new one, and saving
+        console.log(`Generated image saved to ${imagePath}`);
+
+        // Saving quote and image info
         const quotes = await loadQuotes();
         quotes.push({
             _id: quoteData._id,
@@ -46,30 +53,39 @@ async function fetchQuoteAndGenerateImage() {
             author: quoteData.author,
             tags: quoteData.tags || [],
             imageFilename: imageName,
-            fullUrl: `/images/${imageName}`,
+            fullUrl: `/${imageName}`,
             dateGenerated: new Date().toISOString(),
         });
 
         await saveQuotes(quotes);
     } catch (error) {
-        console.error('Error fetching quote or generating image:', error);
+        console.error('Error in fetchQuoteAndGenerateImage:', error);
     }
 }
 
-// Fetch and generate a new quote and image every 10 seconds
+// Fetch and generate images every 10 seconds
 setInterval(fetchQuoteAndGenerateImage, 10000);
 
-// Route for the home page
+// Routes
 app.get('/', async (req, res) => {
     const quotes = await loadQuotes();
-    res.render('index', { images: quotes, baseUrl: req.protocol + '://' + req.get('host') });
+    res.render('index', { images: quotes, baseUrl: req.protocol + '://' + req.get('host') + '/' });
 });
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/`);
+app.get('/filter/author/:author', async (req, res) => {
+    const author = req.params.author;
+    const quotes = await loadQuotes();
+    const filteredQuotes = quotes.filter(quote => quote.author === author);
+    res.render('index', { images: filteredQuotes, baseUrl: req.protocol + '://' + req.get('host') + '/' });
 });
 
+app.get('/filter/tag/:tag', async (req, res) => {
+    const tag = req.params.tag;
+    const quotes = await loadQuotes();
+    const filteredQuotes = quotes.filter(quote => quote.tags && quote.tags.includes(tag));
+    res.render('index', { images: filteredQuotes, baseUrl: req.protocol + '://' + req.get('host') + '/' });
+});
 
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
 
 
