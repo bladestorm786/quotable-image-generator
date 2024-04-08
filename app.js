@@ -2,90 +2,89 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
-const { loadQuotes, saveQuotes } = require('./datastore');
-
 const app = express();
-const port = process.env.PORT || 3001;
+const port = 3001;
 
-// Make sure to replace with your actual Hugging Face API key and adjust the model endpoint as needed
+// GitHub API setup
+const githubToken = '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';
+const githubRepoOwner = 'bladestorm786';
+const githubRepo = 'quotable-image-generator';
+const quotesFilePath = 'path/to/quotes.json'; // Path to your quotes.json in the repository
+
+// Hugging Face API setup
 const HUGGING_FACE_API_KEY = "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";
 const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
 
-
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Set 'view engine' to 'ejs' for rendering
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-async function fetchQuoteAndGenerateImage() {
+async function updateQuotesOnGithub(newQuotes) {
+    const quotesJson = JSON.stringify(newQuotes, null, 2);
+    const contentBase64 = Buffer.from(quotesJson).toString('base64');
+
     try {
-        // Fetching a random quote
-        const quoteResponse = await axios.get('https://api.quotable.io/random');
-        const quoteData = quoteResponse.data;
-
-        console.log(`Fetched quote: ${quoteData.content} - ${quoteData.author}`);
-
-        // Generating an image with the quote
-        const imageResponse = await axios.post(
-            MODEL_ENDPOINT,
-            { inputs: quoteData.content },
-            {
-                headers: { 'Authorization': `Bearer ${HUGGING_FACE_API_KEY}` },
-                responseType: 'arraybuffer',
-            }
-        );
-
-        // Saving the generated image
-        const timestamp = Date.now();
-        const imageName = `images/image_${timestamp}.png`;
-        const imagePath = path.join(__dirname, 'public', imageName);
-        await fs.writeFile(imagePath, imageResponse.data);
-
-        console.log(`Generated image saved to ${imagePath}`);
-
-        // Saving quote and image info
-        const quotes = await loadQuotes();
-        quotes.push({
-            _id: quoteData._id,
-            content: quoteData.content,
-            author: quoteData.author,
-            tags: quoteData.tags || [],
-            imageFilename: imageName,
-            fullUrl: `/${imageName}`,
-            dateGenerated: new Date().toISOString(),
+        const getFileResponse = await axios.get(`https://api.github.com/repos/${githubRepoOwner}/${githubRepo}/contents/${quotesFilePath}`, {
+            headers: { Authorization: `token ${githubToken}` }
         });
 
-        await saveQuotes(quotes);
+        await axios.put(
+            `https://api.github.com/repos/${githubRepoOwner}/${githubRepo}/contents/${quotesFilePath}`,
+            {
+                message: "Update quotes.json",
+                content: contentBase64,
+                sha: getFileResponse.data.sha
+            },
+            { headers: { Authorization: `token ${githubToken}` } }
+        );
+
+        console.log('Quotes updated successfully on GitHub');
     } catch (error) {
-        console.error('Error in fetchQuoteAndGenerateImage:', error);
+        console.error('Failed to update quotes on GitHub:', error.response ? error.response.data : error.message);
     }
 }
 
-// Fetch and generate images every 10 seconds
+async function fetchQuoteAndGenerateImage() {
+    try {
+        const quoteResponse = await axios.get('https://api.quotable.io/random');
+        const quoteData = quoteResponse.data;
+
+        const imageResponse = await axios.post(
+            huggingFaceEndpoint,
+            { inputs: quoteData.content },
+            {
+                headers: { Authorization: `Bearer ${huggingFaceAPIKey}` },
+                responseType: 'arraybuffer'
+            }
+        );
+
+        // For demonstration purposes, image data is not saved but logged. You should store the image where needed.
+        console.log('Image generated from Hugging Face model');
+
+        // Here we'll update the GitHub quotes.json
+        await updateQuotesOnGithub({
+            _id: quoteData._id,
+            content: quoteData.content,
+            author: quoteData.author,
+            tags: quoteData.tags || []
+            // Add image data or reference as needed
+        });
+
+    } catch (error) {
+        console.error('Error in fetchQuoteAndGenerateImage:', error.message);
+    }
+}
+
+// Simulate the quote and image generation process every 10 seconds
 setInterval(fetchQuoteAndGenerateImage, 10000);
 
-// Routes
 app.get('/', async (req, res) => {
-    const quotes = await loadQuotes();
-    res.render('index', { images: quotes, baseUrl: req.protocol + '://' + req.get('host') + '/' });
-});
-
-app.get('/filter/author/:author', async (req, res) => {
-    const author = req.params.author;
-    const quotes = await loadQuotes();
-    const filteredQuotes = quotes.filter(quote => quote.author === author);
-    res.render('index', { images: filteredQuotes, baseUrl: req.protocol + '://' + req.get('host') + '/' });
-});
-
-app.get('/filter/tag/:tag', async (req, res) => {
-    const tag = req.params.tag;
-    const quotes = await loadQuotes();
-    const filteredQuotes = quotes.filter(quote => quote.tags && quote.tags.includes(tag));
-    res.render('index', { images: filteredQuotes, baseUrl: req.protocol + '://' + req.get('host') + '/' });
+    // Since we're now using GitHub to store quotes, you should fetch them from GitHub
+    // This is a placeholder response; replace with actual GitHub fetching logic if needed
+    res.render('index', { images: [], baseUrl: req.protocol + '://' + req.get('host') + '/' });
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+
 
 
