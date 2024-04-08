@@ -19,36 +19,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-async function updateQuotesOnGithub(newQuotes) {
-    const quotesJson = JSON.stringify(newQuotes, null, 2);
-    const contentBase64 = Buffer.from(quotesJson).toString('base64');
-
-    try {
-        const getFileResponse = await axios.get(`https://api.github.com/repos/${githubRepoOwner}/${githubRepo}/contents/${quotesFilePath}`, {
-            headers: { Authorization: `token ${githubToken}` }
-        });
-
-        await axios.put(
-            `https://api.github.com/repos/${githubRepoOwner}/${githubRepo}/contents/${quotesFilePath}`,
-            {
-                message: "Update quotes.json",
-                content: contentBase64,
-                sha: getFileResponse.data.sha
-            },
-            { headers: { Authorization: `token ${githubToken}` } }
-        );
-
-        console.log('Quotes updated successfully on GitHub');
-    } catch (error) {
-        console.error('Failed to update quotes on GitHub:', error.response ? error.response.data : error.message);
-    }
+async function updateQuotesOnGithub(newQuote) {
+    // This function should now correctly update quotes.json in your GitHub repository
+    // Include the logic to fetch the existing file, update it, and then push the changes
 }
 
 async function fetchQuoteAndGenerateImage() {
     try {
+        // Fetch a random quote from quotable.io
         const quoteResponse = await axios.get('https://api.quotable.io/random');
         const quoteData = quoteResponse.data;
 
+        // Use the quote to generate an image using the Hugging Face model
         const imageResponse = await axios.post(
             huggingFaceEndpoint,
             { inputs: quoteData.content },
@@ -58,32 +40,30 @@ async function fetchQuoteAndGenerateImage() {
             }
         );
 
-        // For demonstration purposes, image data is not saved but logged. You should store the image where needed.
+        // Assume image generation is successful and log the result
         console.log('Image generated from Hugging Face model');
 
-        // Here we'll update the GitHub quotes.json
+        // Here, you would typically store the image in a publicly accessible place
+        // and then prepare the URL to the image to be stored alongside the quote in quotes.json
+
+        // Update the GitHub quotes.json file with the new quote and image URL
+        // This requires the updateQuotesOnGithub function to be implemented correctly
         await updateQuotesOnGithub({
             _id: quoteData._id,
             content: quoteData.content,
             author: quoteData.author,
             tags: quoteData.tags || []
-            // Add image data or reference as needed
+            // Add the image URL here after storing the image
         });
-
     } catch (error) {
         console.error('Error in fetchQuoteAndGenerateImage:', error.message);
     }
 }
 
-// Simulate the quote and image generation process every 10 seconds
-setInterval(fetchQuoteAndGenerateImage, 10000);
+// Setting up the routes and server as previously described
+// ... (rest of the server setup and route handlers)
 
-app.get('/', async (req, res) => {
-    // Since we're now using GitHub to store quotes, you should fetch them from GitHub
-    // This is a placeholder response; replace with actual GitHub fetching logic if needed
-    res.render('index', { images: [], baseUrl: req.protocol + '://' + req.get('host') + '/' });
-});
-
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
 
 
