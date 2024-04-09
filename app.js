@@ -9,7 +9,7 @@ const port = 3001;
 const githubToken = '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';
 const githubRepoOwner = 'bladestorm786';
 const githubRepo = 'quotable-image-generator';
-const quotesFilePath = 'path/to/quotes.json'; // Path to your quotes.json in the repository
+const quotesFilePath = 'quotes.json'; // Path to your quotes.json in the repository
 
 // Hugging Face API setup
 const HUGGING_FACE_API_KEY = "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";
