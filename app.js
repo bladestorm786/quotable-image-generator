@@ -63,7 +63,8 @@ async function updateQuotesJsonOnGitHub(newQuote) {
             },
         });
 
-        const existingQuotes = JSON.parse(Buffer.from(res.data.content, 'base64').toString('utf-8'));
+        const decodedContent = Buffer.from(res.data.content, 'base64').toString('utf-8');
+        let existingQuotes = JSON.parse(decodedContent);
         existingQuotes.push(newQuote);
 
         // Update quotes.json with the new quote and the fetched SHA
@@ -83,7 +84,7 @@ async function updateQuotesJsonOnGitHub(newQuote) {
         );
         console.log('quotes.json updated successfully on GitHub.');
     } catch (error) {
-        console.error('Error updating quotes.json on GitHub:', error.message);
+        console.error('Error updating quotes.json on GitHub:', error.response ? error.response.data : error.message);
     }
 }
 
@@ -101,7 +102,7 @@ app.get('/', async (req, res) => {
         res.render('index', { images: quotesWithImageUrl });
     } catch (error) {
         console.error('Error fetching and rendering quotes:', error);
-        res.render('index', { images: [] }); // In case of error, render an empty array
+        res.render('index', { images: [] }); // In case of error, render with an empty array
     }
 });
 
