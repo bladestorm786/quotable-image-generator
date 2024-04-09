@@ -21,15 +21,12 @@ app.set('views', path.join(__dirname, 'views'));
 async function fetchQuoteAndGenerateImage() {
     try {
         const quoteResponse = await axios.get(QUOTABLE_API_URL);
-        const { _id, content, author } = quoteResponse.data;
+        const quoteData = quoteResponse.data;
 
         const imageResponse = await axios.post(
             HUGGING_FACE_MODEL_ENDPOINT,
-            { inputs: content },
-            {
-                headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` },
-                responseType: 'arraybuffer',
-            }
+            { inputs: quoteData.content },
+            { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` }, responseType: 'arraybuffer' }
         );
 
         const timestamp = Date.now();
@@ -37,54 +34,39 @@ async function fetchQuoteAndGenerateImage() {
         const imagePath = path.join(__dirname, 'public', 'images', imageName);
         await fs.writeFile(imagePath, imageResponse.data);
 
-        const quoteInfo = {
-            _id,
-            content,
-            author,
-            image: imageName,
+        const newQuote = {
+            _id: quoteData._id,
+            content: quoteData.content,
+            author: quoteData.author,
+            tags: quoteData.tags,
+            imageFilename: imageName,
+            fullUrl: `/images/${imageName}`,
+            dateGenerated: new Date().toISOString(),
         };
 
-        await updateQuotesJsonOnGitHub(quoteInfo);
+        await updateQuotesJsonOnGitHub(newQuote);
     } catch (error) {
-        console.error('Error in processing quote and image:', error);
+        console.error('Error in fetchQuoteAndGenerateImage:', error.message);
     }
 }
 
 setInterval(fetchQuoteAndGenerateImage, 10000);
 
 async function updateQuotesJsonOnGitHub(newQuote) {
-    const githubApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${QUOTES_JSON_PATH}`;
     try {
+        const githubApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${QUOTES_JSON_PATH}`;
         // Fetch existing quotes.json for SHA
-        const res = await axios.get(githubApiUrl, {
-            headers: {
-                Authorization: `token ${GITHUB_TOKEN}`,
-                Accept: 'application/vnd.github.v3+json',
-            },
-        });
+        const res = await axios.get(githubApiUrl, { headers: { Authorization: `token ${GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json', } });
 
-        const decodedContent = Buffer.from(res.data.content, 'base64').toString('utf-8');
-        let existingQuotes = JSON.parse(decodedContent);
+        const existingQuotes = JSON.parse(Buffer.from(res.data.content, 'base64').toString('utf-8'));
         existingQuotes.push(newQuote);
 
         // Update quotes.json with the new quote and the fetched SHA
-        await axios.put(
-            githubApiUrl,
-            {
-                message: 'Update quotes.json',
-                content: Buffer.from(JSON.stringify(existingQuotes)).toString('base64'),
-                sha: res.data.sha,
-            },
-            {
-                headers: {
-                    Authorization: `token ${GITHUB_TOKEN}`,
-                    Accept: 'application/vnd.github.v3+json',
-                },
-            }
-        );
+        await axios.put(githubApiUrl, { message: 'Update quotes.json', content: Buffer.from(JSON.stringify(existingQuotes)).toString('base64'), sha: res.data.sha }, { headers: { Authorization: `token ${GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json', } });
+
         console.log('quotes.json updated successfully on GitHub.');
     } catch (error) {
-        console.error('Error updating quotes.json on GitHub:', error.response ? error.response.data : error.message);
+        console.error('Error updating quotes.json on GitHub:', error.message);
     }
 }
 
@@ -94,18 +76,14 @@ app.get('/', async (req, res) => {
         const response = await axios.get(quotesUrl);
         const quotes = response.data;
 
-        const quotesWithImageUrl = quotes.map(quote => ({
-            ...quote,
-            fullUrl: `/images/${quote.image}`
-        }));
+        const quotesWithImageUrl = quotes.map(quote => ({ ...quote, fullUrl: `/images/${quote.image}` }));
 
         res.render('index', { images: quotesWithImageUrl });
     } catch (error) {
         console.error('Error fetching and rendering quotes:', error);
-        res.render('index', { images: [] }); // In case of error, render with an empty array
+        res.render('index', { images: [] });
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+
