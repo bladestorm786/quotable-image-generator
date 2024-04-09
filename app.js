@@ -72,7 +72,7 @@ async function updateQuotesJsonOnGitHub(newQuote) {
 
 app.get('/', async (req, res) => {
     try {
-        const quotesUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/${QUOTES_JSON_PATH}`;
+        const quotesUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/quotes.json`;
         const response = await axios.get(quotesUrl);
         const quotes = response.data;
 
