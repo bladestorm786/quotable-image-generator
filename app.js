@@ -2,102 +2,111 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
-const { exec } = require('child_process');
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Replace these with your actual configuration values
-const GITHUB_USERNAME = 'bladestorm786';
-const REPO_NAME = 'quotable-image-generator';
+// Configuration
 const GITHUB_TOKEN = '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';
 const HUGGING_FACE_API_KEY = "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";
-const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
-
+const HUGGING_FACE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
+const QUOTABLE_API_URL = 'https://api.quotable.io/random';
+const GITHUB_USERNAME = 'bladestorm786';
+const REPO_NAME = 'quotable-image-generator';
+const QUOTES_JSON_PATH = 'quotes.json'; // Assuming the file is at the root of the repo
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Fetch quote from Quotable.io
-async function fetchQuote() {
-    const response = await axios.get('https://api.quotable.io/random');
-    return response.data; // Returns the quote object
-}
-
-// Generate image from quote using Hugging Face model
-async function generateImageFromQuote(quote) {
-    const response = await axios.post(
-        HUGGING_FACE_MODEL_ENDPOINT,
-        { inputs: quote.content },
-        {
-            headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` },
-            responseType: 'arraybuffer',
-        }
-    );
-    const timestamp = Date.now();
-    const filename = `image_${timestamp}.png`;
-    const filepath = path.join(__dirname, 'public/images', filename);
-    await fs.writeFile(filepath, response.data);
-    return filename; // Returns the filename of the generated image
-}
-
-// Update quotes.json in GitHub repository
-async function updateGitHubQuotes(newQuote) {
-    const quotesUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/quotes.json`;
-    const getFileResponse = await axios.get(quotesUrl, {
-        headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-            Accept: 'application/vnd.github.v3+json',
-        },
-    });
-
-    const existingQuotes = JSON.parse(Buffer.from(getFileResponse.data.content, 'base64').toString());
-    existingQuotes.push(newQuote);
-
-    await axios.put(
-        quotesUrl,
-        {
-            message: 'Update quotes.json',
-            content: Buffer.from(JSON.stringify(existingQuotes)).toString('base64'),
-            sha: getFileResponse.data.sha,
-        },
-        {
-            headers: {
-                Authorization: `token ${GITHUB_TOKEN}`,
-                Accept: 'application/vnd.github.v3+json',
-            },
-        }
-    );
-}
-
-// Combined function to fetch a quote, generate an image, and update GitHub
 async function fetchQuoteAndGenerateImage() {
     try {
-        const quote = await fetchQuote();
-        const imageFilename = await generateImageFromQuote(quote);
-        const newQuote = {
-            ...quote,
-            imagePath: `images/${imageFilename}`,
+        const quoteResponse = await axios.get(QUOTABLE_API_URL);
+        const { _id, content, author } = quoteResponse.data;
+
+        const imageResponse = await axios.post(
+            HUGGING_FACE_MODEL_ENDPOINT,
+            { inputs: content },
+            {
+                headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` },
+                responseType: 'arraybuffer',
+            }
+        );
+
+        const timestamp = Date.now();
+        const imageName = `image_${timestamp}.png`;
+        const imagePath = path.join(__dirname, 'public', 'images', imageName);
+        await fs.writeFile(imagePath, imageResponse.data);
+
+        const quoteInfo = {
+            _id,
+            content,
+            author,
+            image: imageName,
         };
-        await updateGitHubQuotes(newQuote);
-        console.log('New quote and image processed successfully.');
+
+        await updateQuotesJsonOnGitHub(quoteInfo);
     } catch (error) {
         console.error('Error in processing quote and image:', error);
     }
 }
 
-setInterval(fetchQuoteAndGenerateImage, 60000); // Run every 60 seconds
+setInterval(fetchQuoteAndGenerateImage, 10000);
+
+async function updateQuotesJsonOnGitHub(newQuote) {
+    const githubApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${QUOTES_JSON_PATH}`;
+    try {
+        // Fetch existing quotes.json
+        const res = await axios.get(githubApiUrl, {
+            headers: {
+                Authorization: `token ${GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github.v3+json',
+            },
+        });
+
+        const existingQuotes = JSON.parse(Buffer.from(res.data.content, 'base64').toString('utf-8'));
+        existingQuotes.push(newQuote);
+
+        // Update quotes.json
+        await axios.put(
+            githubApiUrl,
+            {
+                message: 'Update quotes.json',
+                content: Buffer.from(JSON.stringify(existingQuotes)).toString('base64'),
+                sha: res.data.sha,
+            },
+            {
+                headers: {
+                    Authorization: `token ${GITHUB_TOKEN}`,
+                    Accept: 'application/vnd.github.v3+json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error updating quotes.json on GitHub:', error.message);
+    }
+}
 
 app.get('/', async (req, res) => {
-    const quotesJsonUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/quotes.json`;
     try {
-        const response = await axios.get(quotesJsonUrl);
-        res.render('index', { images: response.data });
+        // Fetch the updated quotes.json from GitHub
+        const quotesUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/${QUOTES_JSON_PATH}`;
+        const response = await axios.get(quotesUrl);
+        const quotes = response.data;
+
+        // Map the quotes to include the full URL for each image
+        const quotesWithImageUrl = quotes.map(quote => ({
+            ...quote,
+            fullUrl: `/images/${quote.image}`
+        }));
+
+        // Render the page with the quotes and their images
+        res.render('index', { images: quotesWithImageUrl });
     } catch (error) {
-        console.error('Failed to load quotes:', error);
-        res.render('index', { images: [] });
+        console.error('Error fetching and rendering quotes:', error);
+        res.render('index', { images: [] }); // Render with empty array in case of error
     }
 });
+
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
