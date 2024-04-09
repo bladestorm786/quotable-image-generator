@@ -55,7 +55,7 @@ setInterval(fetchQuoteAndGenerateImage, 10000);
 async function updateQuotesJsonOnGitHub(newQuote) {
     const githubApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${QUOTES_JSON_PATH}`;
     try {
-        // Fetch existing quotes.json
+        // Fetch existing quotes.json for SHA
         const res = await axios.get(githubApiUrl, {
             headers: {
                 Authorization: `token ${GITHUB_TOKEN}`,
@@ -66,7 +66,7 @@ async function updateQuotesJsonOnGitHub(newQuote) {
         const existingQuotes = JSON.parse(Buffer.from(res.data.content, 'base64').toString('utf-8'));
         existingQuotes.push(newQuote);
 
-        // Update quotes.json
+        // Update quotes.json with the new quote and the fetched SHA
         await axios.put(
             githubApiUrl,
             {
@@ -81,6 +81,7 @@ async function updateQuotesJsonOnGitHub(newQuote) {
                 },
             }
         );
+        console.log('quotes.json updated successfully on GitHub.');
     } catch (error) {
         console.error('Error updating quotes.json on GitHub:', error.message);
     }
@@ -88,27 +89,22 @@ async function updateQuotesJsonOnGitHub(newQuote) {
 
 app.get('/', async (req, res) => {
     try {
-        // Fetch the updated quotes.json from GitHub
-        const quotesUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/quotes.json`;
+        const quotesUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/${QUOTES_JSON_PATH}`;
         const response = await axios.get(quotesUrl);
         const quotes = response.data;
 
-        // Map the quotes to include the full URL for each image
         const quotesWithImageUrl = quotes.map(quote => ({
             ...quote,
             fullUrl: `/images/${quote.image}`
         }));
 
-        // Render the page with the quotes and their images
         res.render('index', { images: quotesWithImageUrl });
     } catch (error) {
         console.error('Error fetching and rendering quotes:', error);
-        res.render('index', { images: [] }); // Render with empty array in case of error
+        res.render('index', { images: [] }); // In case of error, render an empty array
     }
 });
-
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
-
