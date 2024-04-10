@@ -6,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Configuration
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = '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';
 const HUGGING_FACE_API_KEY = "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";
 const HUGGING_FACE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
 const QUOTABLE_API_URL = 'https://api.quotable.io/random';
