@@ -30,7 +30,6 @@ async function fetchQuoteAndGenerateImage() {
             { headers: { Authorization: `Bearer ${HUGGING_FACE_API_KEY}` }, responseType: 'arraybuffer' }
         );
 
-        // Ensure your 'public/images' directory exists or create it dynamically
         const imagesDir = path.join(__dirname, 'public', 'images');
         await fs.mkdir(imagesDir, { recursive: true });
 
@@ -55,7 +54,7 @@ async function fetchQuoteAndGenerateImage() {
     }
 }
 
-setInterval(fetchQuoteAndGenerateImage, 3600000); // Adjust frequency as needed to avoid API rate limits
+setInterval(fetchQuoteAndGenerateImage, 3600000); // Adjust frequency to avoid rate limits
 
 async function updateQuotesJsonOnGitHub(newQuote) {
     try {
@@ -87,13 +86,20 @@ async function updateQuotesJsonOnGitHub(newQuote) {
 
 app.get('/', async (req, res) => {
     try {
+        // Define the base URL based on request properties
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        
         const quotesUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/${QUOTES_JSON_PATH}`;
-        const response = await axios.get(quotesUrl, {
-            headers: { Authorization: `Bearer ${GITHUB_TOKEN}` },
-        });
+        const response = await axios.get(quotesUrl);
         const quotes = response.data;
 
-        res.render('index', { images: quotes });
+        // Append baseUrl to the fullUrl property for each quote
+        const quotesWithImages = quotes.map(quote => ({
+            ...quote,
+            fullUrl: baseUrl + quote.fullUrl
+        }));
+
+        res.render('index', { images: quotesWithImages, baseUrl });
     } catch (error) {
         console.error('Error fetching and rendering quotes:', error.response?.data || error.message);
         res.render('index', { images: [] });
@@ -101,6 +107,7 @@ app.get('/', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+
 
 
 
