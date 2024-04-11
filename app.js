@@ -96,7 +96,7 @@ app.get('/', async (req, res) => {
         // Append baseUrl to the fullUrl property for each quote
         const quotesWithImages = quotes.map(quote => ({
             ...quote,
-            fullUrl: baseUrl + quote.fullUrl
+            fullUrl: `${baseUrl}${quote.fullUrl}`
         }));
 
         res.render('index', { images: quotesWithImages, baseUrl });
@@ -107,7 +107,5 @@ app.get('/', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
-
-
 
 
