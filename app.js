@@ -58,7 +58,7 @@ async function fetchQuoteAndGenerateImage() {
     }
 }
 
-setInterval(fetchQuoteAndGenerateImage, 3600000); // Adjust frequency to manage API usage
+setInterval(fetchQuoteAndGenerateImage, 60000); // 60,000 milliseconds = 1 minute
 
 async function updateQuotesJsonOnGitHub(newQuote) {
     try {
