@@ -57,7 +57,7 @@ async function fetchQuoteAndGenerateImage() {
     }
 }
 
-setInterval(fetchQuoteAndGenerateImage, 3600000); // 1 hour
+setInterval(fetchQuoteAndGenerateImage, 10000); // 1 hour
 
 app.get('/', async (req, res) => {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
