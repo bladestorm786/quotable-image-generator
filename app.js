@@ -1,8 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
 const { loadQuotes, saveQuotes } = require('./datastore');
+const simpleGit = require('simple-git');
+const git = simpleGit();
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -27,17 +30,14 @@ async function fetchQuoteAndGenerateImage() {
         );
 
         const imagesDir = path.join(__dirname, 'public', 'images');
-        await fs.mkdir(imagesDir, { recursive: true }).catch(err => console.error('Error creating images directory:', err));
+        await fs.mkdir(imagesDir, { recursive: true });
 
         const timestamp = Date.now();
         const imageName = `image_${timestamp}.png`;
         const imagePath = path.join(imagesDir, imageName);
+        await fs.writeFile(imagePath, imageResponse.data);
 
-        await fs.writeFile(imagePath, imageResponse.data).then(() => {
-            console.log(`Image saved at: ${imagePath}`);
-        }).catch(err => {
-            console.error('Error saving image:', err);
-        });
+        console.log(`Image saved at: ${imagePath}`);
 
         const quotes = await loadQuotes();
         const newQuote = {
@@ -52,12 +52,17 @@ async function fetchQuoteAndGenerateImage() {
 
         quotes.push(newQuote);
         await saveQuotes(quotes);
+
+        // Git commit and push
+        await git.add('./*');
+        await git.commit('Auto-update quotes and images');
+        await git.push('origin', 'main');
     } catch (error) {
         console.error('Error in fetchQuoteAndGenerateImage:', error);
     }
 }
 
-setInterval(fetchQuoteAndGenerateImage, 10000); // 1 hour
+setInterval(fetchQuoteAndGenerateImage, 3600000); // Adjust frequency to avoid API rate limits
 
 app.get('/', async (req, res) => {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -68,6 +73,7 @@ app.get('/', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+
 
 
 
