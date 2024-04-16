@@ -17,6 +17,7 @@
     "fs-extra": "^11.2.0",
     "node-fetch": "^3.3.2",
     "dotenv": "^8.2.0",
-    "simple-git": "^2.46.0"
+    "simple-git": "^2.46.0",
+    "googleapis": "^100.0.0" // Add this line to include googleapis
   }
 }
