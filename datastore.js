@@ -17,7 +17,7 @@ async function loadQuotes() {
     await authenticateDrive();
     try {
         const response = await drive.files.get({
-            fileId: 'your_google_drive_file_id_for_quotes_json', // Replace with your file ID
+            fileId: '1r2O7pB7efUyAyig871qRUR-v9VErAlAj', // Replace with your file ID
             alt: 'media'
         });
         return JSON.parse(response.data);
