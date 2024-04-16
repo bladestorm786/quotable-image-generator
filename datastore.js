@@ -62,6 +62,6 @@ async function saveImageToGoogleDrive(imageBuffer, imageName) {
     }
 }
 
-module.exports = { loadQuotes, saveQuotes, saveImageToGoogle Drive };
+module.exports = { loadQuotes, saveQuotes, saveImageToGoogleDrive };
 
 
