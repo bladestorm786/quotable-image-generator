@@ -4,9 +4,10 @@ const path = require('path');
 const quotesFilePath = path.join(__dirname, 'quotes.json'); // Not used for Google Drive operations
 const drive = google.drive({ version: 'v3' });
 const googleAuth = new google.auth.GoogleAuth({
-    keyFile: 'path/to/your/credentials.json', // Path to your Google credentials file
+    keyFile: 'aurainspire-440fa947a614.json', // Ensure this path is correct
     scopes: ['https://www.googleapis.com/auth/drive']
 });
+
 
 async function authenticateDrive() {
     const authClient = await googleAuth.getClient();
