@@ -62,7 +62,7 @@ async function fetchQuoteAndGenerateImage() {
     }
 }
 
-setInterval(fetchQuoteAndGenerateImage, 3600000); // Adjust frequency to avoid API rate limits
+setInterval(fetchQuoteAndGenerateImage, 60000); // Adjust frequency to once per minute
 
 app.get('/', async (req, res) => {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
