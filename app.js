@@ -5,13 +5,13 @@ const fs = require('fs').promises;
 const path = require('path');
 const { loadQuotes, saveQuotes } = require('./datastore');
 const simpleGit = require('simple-git');
-const git = simpleGit();
+const git = simpleGit({
+    baseDir: path.join(__dirname, './')
+});
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Ensure these are correctly set in your .env file or environment variables
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
 const HUGGING_FACE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/goofyai/3d_render_style_xl";
 const QUOTABLE_API_URL = 'https://api.quotable.io/random';
@@ -73,6 +73,7 @@ app.get('/', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+
 
 
 
